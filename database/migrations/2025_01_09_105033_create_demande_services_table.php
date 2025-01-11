@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('demande_services', function (Blueprint $table) {
             $table->unsignedBigInteger('client_id'); // Clé étrangère pour le client
             $table->unsignedBigInteger('professionnel_id'); // Clé étrangère pour le professionnel
-            $table->date('DateDemande')->default(DB::raw('CURRENT_DATE')); // Date avec la date système par défaut
+            $table->datetime('DateDemande')->default(DB::raw('CURRENT_TIMESTAMP')); // Date avec la date système par défaut 
             $table->enum('Statut', ['en_attente', 'terminé', 'annulé'])->default('en_attente');
             $table->date('DateExecution')->nullable(); // Date d'exécution de la demande
             $table->timestamps();

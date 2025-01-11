@@ -26,8 +26,7 @@ return new class extends Migration
             $table->text('available_hours')->nullable();
             $table->decimal('note_moyenne', 3, 2)->default(0.00);
             $table->string('location')->nullable();
-            $table->foreignId('service_id')->references('id')->on('services')->onDelete('cascade'); // Ajout de la clé étrangère         
-            $table->rememberToken();
+            $table->foreignId('service_id')->nullable()->constrained('services')->onDelete('set null'); // Clé étrangère avec option nullable
             $table->timestamps();
         });
 

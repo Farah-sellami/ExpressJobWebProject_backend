@@ -11,7 +11,7 @@ class Service extends Model
                         'Titre', 
                         'Description', 
                         'DateCreation',  
-                        'category_id'
+                        'categorie_id'
                        ];
 
     public function categorie()
