@@ -34,13 +34,13 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'avatar',
         'telephone',
         'adresse',
+        //champs pour professionnels
         'competence',
         'available_hours',
         'note_moyenne',
         'location',
         'service_id', // Clé étrangère vers Service
         'last_connection',
-        
     ];
 
     /**
@@ -70,7 +70,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
      // Relation avec les services proposés par le professionnel
      public function services()
      {
-         return $this->hasMany(Service::class);
+         return $this->belongsTo(Service::class);
      }
      
      // Relation avec user
@@ -126,5 +126,10 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
             'role' => $this->role,
         ]; 
     }    
+
+    public function getAvatarAttribute($value)
+{
+    return $value ?? 'https://res.cloudinary.com/defx74d1x/image/upload/v1737276011/icons8-user-100_lxppdo.png';
+}
 
 }

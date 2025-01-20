@@ -20,6 +20,6 @@ class Service extends Model
     }
     public function professionnels()
     {
-        return $this->belongsTo(user::class, 'service_id');
+        return $this->hasMany(user::class, 'service_id');
     }
 }

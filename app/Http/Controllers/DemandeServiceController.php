@@ -16,18 +16,21 @@ class DemandeServiceController extends Controller
     public function envoyerDemande(Request $request)
     {
         // Validation de la requête
-        $request->validate([
-            'professionnel_id' => 'required|exists:users,id',
-            'DateExecution' => 'required|date',
-        ]);
-        $clientId = auth('api')->id(); 
+    $request->validate([
+        'professionnel_id' => 'required|exists:users,id',
+    ]);
+    
+    // Utiliser la date actuelle du système (le serveur)
+    $dateExecution = now(); // Cela récupère la date et l'heure actuelles du serveur
 
-        // Créer la demande de service
-        $demandeService = DemandeService::create([
-            'client_id' => $clientId,
-            'professionnel_id' => $request->professionnel_id,
-            'DateExecution' => $request->DateExecution,
-        ]);
+    $clientId = auth('api')->id(); 
+
+    // Créer la demande de service avec la date du système
+    $demandeService = DemandeService::create([
+        'client_id' => $clientId,
+        'professionnel_id' => $request->professionnel_id,
+        'DateExecution' => $dateExecution, // Remplace ici par la date système
+    ]);
 
         // Trouver le professionnel à notifier
         $professionnel = User::find($request->professionnel_id);
@@ -49,42 +52,58 @@ class DemandeServiceController extends Controller
         if ($demandeService->professionnel_id != auth('api')->id()) {
             return response()->json(['error' => 'Vous n\'êtes pas autorisé à modifier cette demande.'], 403);
         }
-
+    
         // Valider le statut
         $statutsValides = ['en_attente', 'terminé', 'annulé'];
         if (!in_array($nouveauStatut, $statutsValides)) {
             return response()->json(['error' => 'Statut invalide.'], 400);
         }
-
+    
         // Mettre à jour le statut
         $demandeService->updateStatut($nouveauStatut);
-
-        return response()->json(['message' => 'Statut de la demande mis à jour.'], 200);
+    
+        // Renvoyer le statut mis à jour dans la réponse
+        return response()->json([
+            'message' => 'Statut de la demande mis à jour.',
+            'demande' => $demandeService
+        ], 200);
     }
+    
 
-    /**
-     * Client consulte la liste de ses demandes de service.
-     */
-    public function consulterDemandesClient()
-    {
-        $demandes = DemandeService::where('client_id', auth('api')->id())->get();
+/**
+ * Consulter les demandes de service en fonction du rôle de l'utilisateur.
+ */
+public function consulterDemandes()
+{
+    $user = auth('api')->user(); // Récupère l'utilisateur connecté
 
+      // Si l'utilisateur est un client, il peut voir seulement ses propres demandes
+      if ($user->role === 'client') {
+        $demandes = DemandeService::with(['client', 'professionnel'])  // Charger les informations liées au client et au professionnel
+            ->where('client_id', $user->id)
+            ->get();
         return response()->json(['demandes' => $demandes], 200);
     }
 
-    /**
-     * Admin consulte toutes les demandes de service.
-     */
-    public function consulterDemandesAdmin()
-    {
-        // Vérifier si l'utilisateur est un administrateur
-        if (auth('api')->user()->role !== 'admin') {
-            return response()->json(['error' => 'Accès interdit.'], 403);
-        }
-        $demandes = DemandeService::all();
-
+    // Si l'utilisateur est un professionnel, il peut voir les demandes qui le concernent
+    if ($user->role === 'professionnel') {
+        $demandes = DemandeService::with(['client', 'professionnel'])  // Charger les informations liées au client et au professionnel
+            ->where('professionnel_id', $user->id)
+            ->get();
         return response()->json(['demandes' => $demandes], 200);
     }
+
+    // Si l'utilisateur est un administrateur, il peut voir toutes les demandes
+    if ($user->role === 'admin') {
+        $demandes = DemandeService::with(['client', 'professionnel'])  // Charger les informations liées au client et au professionnel
+            ->get();
+        return response()->json(['demandes' => $demandes], 200);
+    }
+
+    // Si l'utilisateur n'est ni un client, ni un professionnel, ni un administrateur, accès refusé
+    return response()->json(['error' => 'Accès interdit.'], 403);
+}
+
 
     /**
      * Récupérer les notifications de l'utilisateur connecté.

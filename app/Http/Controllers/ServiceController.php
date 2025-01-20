@@ -22,12 +22,29 @@ class ServiceController extends Controller
         }
     }
 
+     /**
+     * Afficher les services d'une catégorie spécifique.
+     */
+    public function getServiceByCategorie($categorieId)
+    {
+        try {
+            $services = Service::where('categorie_id', $categorieId)->with('categorie')->get();
+            return response()->json($services);
+        } catch (\Exception $e) {
+            return response()->json("Erreur lors de la récupération des services pour cette catégorie.", 500);
+        }
+    }
+
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
-        //
+        // Vérifier si l'utilisateur est un administrateur
+        if (auth('api')->user()->role !== 'admin') {
+            return response()->json(['error' => 'Accès interdit.'], 403);
+        }
+
           // Validation des données
           $request->validate([
             'Titre' => 'required|string|max:255',
@@ -74,7 +91,11 @@ class ServiceController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        // Vérifier si l'utilisateur est un administrateur
+        if (auth('api')->user()->role !== 'admin') {
+            return response()->json(['error' => 'Accès interdit.'], 403);
+        }
+
         // Validation des données
         $request->validate([
             'Titre' => 'required|string|max:255',
@@ -103,7 +124,11 @@ class ServiceController extends Controller
      */
     public function destroy($id)
     {
-        //
+        // Vérifier si l'utilisateur est un administrateur
+        if (auth('api')->user()->role !== 'admin') {
+            return response()->json(['error' => 'Accès interdit.'], 403);
+        }
+
         try {
             $service = Service::findOrFail($id);
             $service->delete();
@@ -112,4 +137,43 @@ class ServiceController extends Controller
             return response()->json("Erreur lors de la suppression du service.", 500);
         }
     }
+
+    /**
+ * Récupérer les professionnels associés à un service spécifique.
+ *
+ * @param int $serviceId
+ * @return \Illuminate\Http\JsonResponse
+ */
+public function getProfessionalsByService($serviceId)
+{
+    try {
+        // Trouver le service par son ID
+        $service = Service::findOrFail($serviceId);
+
+       // Récupérer les professionnels associés
+       $professionnels = $service->professionnels; // Relation correcte
+
+       // Si nécessaire, formater les professionnels
+       $formattedProfessionnels = $professionnels->map(function ($pro) {
+           return [
+               'id' => $pro->id,
+               'name' => $pro->name,
+               'email' => $pro->email,
+               // Ajoutez d'autres colonnes nécessaires
+           ];
+       });
+
+        // Retourner les professionnels sous forme JSON
+        return response()->json([
+            'service' => $service->Titre,
+            'professionnels' => $professionnels->toArray() // Conversion explicite en tableau
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Erreur lors de la récupération des professionnels.',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
+
 }

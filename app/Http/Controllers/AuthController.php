@@ -14,7 +14,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException; 
 use App\Notifications\VerifyEmailNotification;
 // use App\Mail\VerifyEmailMail;
-
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class AuthController extends Controller
 {
@@ -27,21 +27,25 @@ class AuthController extends Controller
             'email' => 'required|email',
             'password' => 'required|string|min:6',
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
-
+    
         $credentials = $request->only('email', 'password');
+        
         try {
             if (!$token = JWTAuth::attempt($credentials)) {
                 return response()->json(['error' => 'Invalid credentials'], 401);
             }
+        
+            // L'utilisateur authentifié après l'obtention du token
+            $user = auth()->user();
+    
+            return $this->createNewToken($token, $user);
         } catch (JWTException $e) {
             return response()->json(['error' => 'Could not create token'], 500);
         }
-
-        return $this->createNewToken($token);
     }
 
     /**
@@ -83,6 +87,19 @@ class AuthController extends Controller
         'location' => $request->location,
         'isActive' => false,
     ];
+
+     // Gestion de l'avatar avec Cloudinary
+     if ($request->hasFile('avatar')) {
+        try {
+            $uploadedFileUrl = Cloudinary::upload($request->file('avatar')->getRealPath())->getSecurePath();
+            $userData['avatar'] = $uploadedFileUrl;
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Échec du téléchargement de l\'avatar.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 
     // Ajoute `service_id` seulement si l'utilisateur est un professionnel
     if ($request->role === 'professionnel') {
@@ -145,13 +162,13 @@ class AuthController extends Controller
     /**
      * Helper function to format the token response.
      */
-    protected function createNewToken($token)
+    protected function createNewToken($token, $user)
     {
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => auth('api')->factory()->getTTL() * 60,
-            'user' => auth('api')->user(),
+            'user' => $user,
         ]);
     }
 
