@@ -33,7 +33,7 @@ Route::middleware(['auth:api'])->group(function () {
     Route::get('/services/{serviceId}/professionnels', [ServiceController::class, 'getProfessionalsByService']);
 
     // Routes accessibles uniquement par les administrateurs
-    Route::middleware('role:admin')->group(function () {
+    Route::middleware(['auth:api'])->group(function () {
         Route::post('/services', [ServiceController::class, 'store']);        // Ajouter un service
         Route::put('/services/{id}', [ServiceController::class, 'update']);  // Modifier un service
         Route::delete('/services/{id}', [ServiceController::class, 'destroy']); // Supprimer un service

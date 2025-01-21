@@ -112,6 +112,9 @@ class ServiceController extends Controller
                 'DateCreation' => $request->input('DateCreation', now()),
                 'categorie_id' => $request->input('categorie_id'),
             ]);
+            // Charger la relation 'categorie' et retourner la réponse avec les informations complètes
+        $service->load('categorie');
+
 
             return response()->json($service);
         } catch (\Exception $e) {
