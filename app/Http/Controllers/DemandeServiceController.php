@@ -19,17 +19,18 @@ class DemandeServiceController extends Controller
     $request->validate([
         'professionnel_id' => 'required|exists:users,id',
     ]);
-    
+
     // Utiliser la date actuelle du système (le serveur)
     $dateExecution = now(); // Cela récupère la date et l'heure actuelles du serveur
 
-    $clientId = auth('api')->id(); 
+    $clientId = auth('api')->id();
 
     // Créer la demande de service avec la date du système
     $demandeService = DemandeService::create([
         'client_id' => $clientId,
         'professionnel_id' => $request->professionnel_id,
-        'DateExecution' => $dateExecution, // Remplace ici par la date système
+        'DateDemande' => now(),
+        'DateExecution' => now(),
     ]);
 
         // Trouver le professionnel à notifier
@@ -47,28 +48,28 @@ class DemandeServiceController extends Controller
     public function changerStatutDemande($demandeId, $nouveauStatut)
     {
         $demandeService = DemandeService::findOrFail($demandeId);
-        
+
         // Vérifier si le professionnel est celui qui reçoit la demande
         if ($demandeService->professionnel_id != auth('api')->id()) {
             return response()->json(['error' => 'Vous n\'êtes pas autorisé à modifier cette demande.'], 403);
         }
-    
+
         // Valider le statut
         $statutsValides = ['en_attente', 'terminé', 'annulé'];
         if (!in_array($nouveauStatut, $statutsValides)) {
             return response()->json(['error' => 'Statut invalide.'], 400);
         }
-    
+
         // Mettre à jour le statut
         $demandeService->updateStatut($nouveauStatut);
-    
+
         // Renvoyer le statut mis à jour dans la réponse
         return response()->json([
             'message' => 'Statut de la demande mis à jour.',
             'demande' => $demandeService
         ], 200);
     }
-    
+
 
 /**
  * Consulter les demandes de service en fonction du rôle de l'utilisateur.
@@ -115,4 +116,12 @@ public function consulterDemandes()
 
         return response()->json(['notifications' => $notifications], 200);
     }
+
+    public function getDemandesByClient($id)
+{
+    $demandes = DemandeService::where('client_id', $id)->with('professionnel')->get();
+
+    return response()->json($demandes);
+}
+
 }

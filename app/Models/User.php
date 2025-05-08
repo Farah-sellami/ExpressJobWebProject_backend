@@ -72,13 +72,13 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
      {
          return $this->belongsTo(Service::class);
      }
-     
+
      // Relation avec user
      public function avis()
      {
          return $this->hasMany(Avis::class);
      }
-     
+
     // Relation avec les demandes de services reçues par le professionnel
     public function servicesReçus()
     {
@@ -90,42 +90,42 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     {
         return $this->hasMany(DemandeService::class, 'clientid');
     }
- 
+
      // Déterminer si un utilisateur est un admin, un professionnel ou un client
      public function isAdmin()
      {
          return $this->role  === self::ROLE_ADMIN;
      }
- 
+
      public function isProfessionnel()
      {
          return $this->role === self::ROLE_PROFESSIONNEL;
      }
- 
+
      public function isClient()
      {
          return $this->role === self::ROLE_CLIENT;
      }
 
-     /** 
-     * Get the identifier that will be stored in the subject claim of the JWT. 
-     * 
-     * @return mixed 
-     */ 
-    public function getJWTIdentifier() { 
-        return $this->getKey(); 
-    } 
- 
-    /** 
-     * Return a key value array, containing any custom claims to be added to the JWT. 
-     * 
-     * @return array 
-     */ 
-    public function getJWTCustomClaims() { 
+     /**
+     * Get the identifier that will be stored in the subject claim of the JWT.
+     *
+     * @return mixed
+     */
+    public function getJWTIdentifier() {
+        return $this->getKey();
+    }
+
+    /**
+     * Return a key value array, containing any custom claims to be added to the JWT.
+     *
+     * @return array
+     */
+    public function getJWTCustomClaims() {
         return [
             'role' => $this->role,
-        ]; 
-    }    
+        ];
+    }
 
     public function getAvatarAttribute($value)
 {

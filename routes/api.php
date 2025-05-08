@@ -25,7 +25,7 @@ Route::middleware(['auth:api'])->group(function () {
 
 /* Les routes des avis*/
 
-route::middleware('api')->group(function () 
+route::middleware('api')->group(function ()
 {Route::resource('avis', AvisController::class);});
 
 // Routes des services
@@ -46,14 +46,24 @@ Route::get('/services/{id}', [ServiceController::class, 'show']);              /
 Route::get('/services/category/{categorieId}', [ServiceController::class, 'getServiceByCategorie']); // Consulter les services par catégorie
 
 // Routes des utilisateurs
-route::middleware(['auth:api'])->group(function () 
-{Route::resource('user', UserController::class);});
+route::middleware(['auth:api'])->group(function ()
+{    // Routes RESTful
+    Route::resource('user', UserController::class)->except(['index']);
+
+    // Liste complète des utilisateurs (non paginée, admin uniquement)
+    Route::get('user/list', [UserController::class, 'index']);
+
+    // Liste paginée
+    Route::get('user-pagination', [UserController::class, 'indexPagination']);
+
+    Route::delete('/{Id}', [UserController::class, 'destroy']);
+
+});
  // Mise à jour du profil
 Route::put('profile', [UserController::class, 'updateProfile']); // Client/Professional: Update own profile
   // Suppression du profil
 Route::delete('profile', [UserController::class, 'deleteProfile']); // Client/Professional: Delete own profile
 // Routes pour les utilisateurs avec pagination
-Route::get('/users', [UserController::class, 'indexPagination']);
 Route::get('/usersByRole', [UserController::class, 'getUsersByRole']);
 Route::get('/count-professionnels', [UserController::class, 'countProfessionnels']);
 Route::get('/count-clients', [UserController::class, 'countClients']);
@@ -71,6 +81,9 @@ Route::middleware(['auth:api'])->group(function () {
 
     // Route pour récupérer les notifications de l'utilisateur connecté
     Route::get('/notifications', [DemandeServiceController::class, 'getNotifications']);
+    Route::get('/demandes/client/{id}', [DemandeServiceController::class, 'getDemandesByClient']);
+
+
 });
 
 // Routes d'authentification

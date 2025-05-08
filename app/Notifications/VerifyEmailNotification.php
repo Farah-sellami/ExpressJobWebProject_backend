@@ -37,7 +37,7 @@ class VerifyEmailNotification extends Notification
         return (new MailMessage)
             ->subject('verifier votre email')
             ->greeting("bonjour, {$notifiable->name}!")
-            ->line('merci pour votre inscription! Pour verifier votre email,en cliquant sur le bouton ci-dessous')
+            ->line('merci pour votre inscription en EXPRESS JOB ! Pour verifier votre email,en cliquant sur le bouton ci-dessous')
             ->action('Verifie mail', $this->verificationUrl);
     }
 

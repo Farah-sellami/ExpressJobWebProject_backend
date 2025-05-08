@@ -14,11 +14,11 @@ class CategorieController extends Controller
      */
     public function index()
     {
-        try { 
-            $categories=Categorie::all(); 
-            return response()->json($categories); 
-        } catch (\Exception $e) { 
-        return response()->json("probleme de récupération de la liste des catégories"); 
+        try {
+            $categories=Categorie::all();
+            return response()->json($categories);
+        } catch (\Exception $e) {
+        return response()->json("probleme de récupération de la liste des catégories");
         }
     }
 
@@ -27,51 +27,39 @@ class CategorieController extends Controller
      */
     public function store(Request $request)
     {
-          // Vérifier si l'utilisateur est un administrateur
-    if (auth('api')->user()->role !== 'admin') {
-        return response()->json(['error' => 'Accès interdit.'], 403);
-    }
-
-    // Validation des données
-    $validator = Validator::make($request->all(), [
-        'Titre' => 'required|unique:categories,Titre',
-        'Description' => 'nullable|string',
-        'image' => 'nullable|image|'
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json(['error' => 'Validation échouée', 'messages' => $validator->errors()]);
-    }
-
-    try {
-        // Gérer l'upload de l'image avec Cloudinary
-        $imageUrl = null;
-        if ($request->hasFile('image')) {
-            // Upload de l'image sur Cloudinary
-            $image = $request->file('image');
-            $uploadResult = Cloudinary::upload($image->getRealPath())->getSecurePath();
-            $imageUrl = $uploadResult; // L'URL sécurisée de l'image uploadée
+        if (auth('api')->user()->role !== 'admin') {
+            return response()->json(['error' => 'Accès interdit.'], 403);
         }
 
-        // Création de la catégorie avec les données validées
-        $categorie = new Categorie([
-            'Titre' => $request->input('Titre'),
-            'Description' => $request->input('Description'),
-            'image' => $imageUrl // Utiliser l'URL de l'image
+        $validator = Validator::make($request->all(), [
+            'Titre' => 'required|unique:categories,Titre',
+            'Description' => 'nullable|string',
+            'image' => 'nullable|string|url', // plus file/image ici
         ]);
 
-        // Sauvegarde de la catégorie dans la base de données
-        $categorie->save();
+        if ($validator->fails()) {
+            return response()->json(['error' => 'Validation échouée', 'messages' => $validator->errors()]);
+        }
 
-        return response()->json($categorie);
+        try {
+            $categorie = new Categorie([
+                'Titre' => $request->input('Titre'),
+                'Description' => $request->input('Description'),
+                'image' => $request->input('image'), // image déjà hébergée
+            ]);
 
-    } catch (\Exception $e) {
-        return response()->json(
-            ['error' => 'Insertion impossible',
-        'message' => $e->getMessage(),
-        'trace' => $e->getTrace()
-    ], 500);    }
-}
+            $categorie->save();
+
+            return response()->json($categorie);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Insertion impossible',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
 
     /**
      * Display the specified resource.
@@ -79,13 +67,13 @@ class CategorieController extends Controller
     public function show($id)
     {
         //
-        try { 
-            $categorie=Categorie::findOrFail($id); 
-            return response()->json($categorie); 
-             
-        } catch (\Exception $e) { 
-            return response()->json("probleme de récupération des données"); 
-        } 
+        try {
+            $categorie=Categorie::findOrFail($id);
+            return response()->json($categorie);
+
+        } catch (\Exception $e) {
+            return response()->json("probleme de récupération des données");
+        }
     }
 
     /**
@@ -93,53 +81,40 @@ class CategorieController extends Controller
      */
     public function update(Request $request, $id)
     {
-          // Vérifier si l'utilisateur est un administrateur
-          if (auth('api')->user()->role !== 'admin') {
+        if (auth('api')->user()->role !== 'admin') {
             return response()->json(['error' => 'Accès interdit.'], 403);
         }
-             // Validation des données
-             $validator = Validator::make($request->all(), [
-                'Titre' => 'required|unique:categories,Titre,' . $id,
-                'Description' => 'nullable|string',
-                'image' => 'nullable|file|image'
-            ]);
-    
-            if ($validator->fails()) {
-                return response()->json(['error' => 'Validation échouée', 'messages' => $validator->errors()]);
-            }
-            try {
-                // Récupérer la catégorie à mettre à jour
-                $categorie = Categorie::findOrFail($id);
-        
-                // Si une nouvelle image est fournie, la télécharger sur Cloudinary
-                if ($request->hasFile('image')) {
-                    // Supprimer l'ancienne image si nécessaire
-                    if ($categorie->image) {
-                        // Extraire l'identifiant public de l'image existante depuis l'URL
-                        $publicId = basename($categorie->image, '.' . pathinfo($categorie->image, PATHINFO_EXTENSION));
-                        Cloudinary::destroy($publicId);
-                    }
-        
-                    // Télécharger la nouvelle image sur Cloudinary
-                    $uploadedImage = Cloudinary::upload($request->file('image')->getRealPath(), [
-                        'folder' => 'categories', // Dossier où l'image sera stockée
-                    ]);
-        
-                    // Mettre à jour l'URL de l'image dans la catégorie
-                    $categorie->image = $uploadedImage->getSecurePath();
-                }
-        
-                // Mettre à jour les autres champs
-                $categorie->Titre = $request->input('Titre');
-                $categorie->Description = $request->input('Description', $categorie->Description);
-                $categorie->save();
-        
-                return response()->json($categorie);
-        
-            } catch (\Exception $e) {
-                return response()->json(['error' => 'Problème lors de la modification', 'message' => $e->getMessage()], 500);
-            }
+
+        $validator = Validator::make($request->all(), [
+            'Titre' => 'required|unique:categories,Titre,' . $id,
+            'Description' => 'nullable|string',
+            'image' => 'nullable|string|url', // on attend une URL Cloudinary
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => 'Validation échouée', 'messages' => $validator->errors()]);
         }
+
+        try {
+            $categorie = Categorie::findOrFail($id);
+
+            // Mise à jour simple, car image déjà uploadée sur Cloudinary par le frontend
+            $categorie->Titre = $request->input('Titre');
+            $categorie->Description = $request->input('Description', $categorie->Description);
+            $categorie->image = $request->input('image', $categorie->image); // image optionnelle
+
+            $categorie->save();
+
+            return response()->json($categorie);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Problème lors de la modification',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     /**
      * Remove the specified resource from storage.
@@ -147,17 +122,17 @@ class CategorieController extends Controller
     public function destroy($id)
     {
         //
-        try { 
+        try {
             // Vérifier si l'utilisateur est un administrateur
             if (auth('api')->user()->role !== 'admin') {
                 return response()->json(['error' => 'Accès interdit.'], 403);
             }
 
-            $categorie=Categorie::findOrFail($id); 
-            $categorie->delete(); 
-            return response()->json("catégorie supprimée avec succes"); 
-            } catch (\Exception $e) { 
-            return response()->json("probleme de suppression de catégorie"); 
+            $categorie=Categorie::findOrFail($id);
+            $categorie->delete();
+            return response()->json("catégorie supprimée avec succes");
+            } catch (\Exception $e) {
+            return response()->json("probleme de suppression de catégorie");
             }
     }
 }
