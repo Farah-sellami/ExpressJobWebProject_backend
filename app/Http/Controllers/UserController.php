@@ -23,61 +23,61 @@ class UserController extends Controller
     public function index()
     {
         try {
-            // Vérifier si l'utilisateur est un administrateur
+            //Vérifier si l'utilisateur est un administrateur
     if (auth('api')->user()->role !== 'admin') {
         return response()->json(['error' => 'Accès interdit.'], 403);
     }
              $users = User::all();
-          
+
             return response()->json($users);
         } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    public function indexPagination(Request $request)
-    {
-        try {
-            // Vérifier si l'utilisateur est un administrateur
-            if (auth('api')->user()->role !== 'admin') {
-                return response()->json(['error' => 'Accès interdit.'], 403);
-            }
-    
-            // Valider les paramètres de pagination et de filtrage par rôle
-            $validated = $request->validate([
-                'per_page' => 'integer|min:1|max:100', // Limite par page : 1 à 100
-                'role' => 'nullable|string|in:admin,client,professionnel', // Rôles valides
-            ]);
-    
-            // Déterminer la valeur par défaut de la pagination
-            $perPage = $validated['per_page'] ?? 5;
-    
-            // Récupérer les utilisateurs, en appliquant le filtre par rôle si nécessaire
-            $query = User::query();
-    
-           // Si un rôle est spécifié, on l'applique
-        if (!empty($validated['role'])) {
-            $query->where('role', $validated['role']);
-        }
+    // public function indexPagination(Request $request)
+    // {
+    //     try {
+    //         // Vérifier si l'utilisateur est un administrateur
+    //         if (auth('api')->user()->role !== 'admin') {
+    //             return response()->json(['error' => 'Accès interdit.'], 403);
+    //         }
 
-    
-            // Appliquer la pagination
-            $users = $query->paginate($perPage);
-    
-            return response()->json([
-                'users' => $users->items(),
-                'total_pages' => $users->lastPage(),
-                'current_page' => $users->currentPage(),
-                'per_page' => $users->perPage(),
-                'total_users' => $users->total(),
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['error' => $e->errors()], 422); // Retourne les erreurs de validation
-        } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
-    
-    
+    //         // Valider les paramètres de pagination et de filtrage par rôle
+    //         $validated = $request->validate([
+    //             'per_page' => 'integer|min:1|max:100', // Limite par page : 1 à 100
+    //             'role' => 'nullable|string|in:admin,client,professionnel', // Rôles valides
+    //         ]);
+
+    //         // Déterminer la valeur par défaut de la pagination
+    //         $perPage = $validated['per_page'] ?? 5;
+
+    //         // Récupérer les utilisateurs, en appliquant le filtre par rôle si nécessaire
+    //         $query = User::query();
+
+    //        // Si un rôle est spécifié, on l'applique
+    //     if (!empty($validated['role'])) {
+    //         $query->where('role', $validated['role']);
+    //     }
+
+
+    //         // Appliquer la pagination
+    //         $users = $query->paginate($perPage);
+
+    //         return response()->json([
+    //             'users' => $users->items(),
+    //             'total_pages' => $users->lastPage(),
+    //             'current_page' => $users->currentPage(),
+    //             'per_page' => $users->perPage(),
+    //             'total_users' => $users->total(),
+    //         ]);
+    //     } catch (\Illuminate\Validation\ValidationException $e) {
+    //         return response()->json(['error' => $e->errors()], 422); // Retourne les erreurs de validation
+    //     } catch (Exception $e) {
+    //         return response()->json(['error' => $e->getMessage()], 500);
+    //     }
+    // }
+
+
 
     /**
      * Supprimer un utilisateur (Admin uniquement).
@@ -103,7 +103,7 @@ class UserController extends Controller
     {
         try {
             $user = Auth::user();
-    
+
             // Validation des données spécifiques selon le rôle
             $validated = $request->validate([
                 'name' => 'string|max:255',
@@ -116,7 +116,7 @@ class UserController extends Controller
                 'telephone' => 'nullable|string|max:15',
                 'adresse' => 'nullable|string|max:255',
             ]);
-    
+
             // Validation spécifique pour les professionnels
             if ($user->role == 'professionnel') {
                 $validated = array_merge($validated, $request->validate([
@@ -126,21 +126,21 @@ class UserController extends Controller
                     'service_id' => 'nullable|exists:services,id|required_if:role,professionnel',
                 ]));
             }
-    
+
             // Upload de l'avatar si présent
             if ($request->hasFile('avatar')) {
                 $uploadedFileUrl = Cloudinary::upload($request->file('avatar')->getRealPath())->getSecurePath();
                 $validated['avatar'] = $uploadedFileUrl;
             }
-    
+
             // Hash du mot de passe si fourni
             if ($request->has('password')) {
                 $validated['password'] = Hash::make($request->password);
             }
-    
+
             // Mise à jour des informations de l'utilisateur
             $user->update($validated);
-    
+
             return response()->json([
                 'message' => 'Profile updated successfully.',
                 'user' => $user
@@ -149,7 +149,7 @@ class UserController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    
+
     /**
      * Consulter le profil de l'utilisateur connecté.
      */

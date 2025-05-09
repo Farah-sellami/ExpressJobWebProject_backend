@@ -54,7 +54,8 @@ route::middleware(['auth:api'])->group(function ()
     Route::get('user/list', [UserController::class, 'index']);
 
     // Liste paginée
-    Route::get('user-pagination', [UserController::class, 'indexPagination']);
+ //   Route::get('user-pagination', [UserController::class, 'indexPagination']);
+ Route::get('user/list', [UserController::class, 'index']);
 
     Route::delete('/{Id}', [UserController::class, 'destroy']);
 
@@ -67,6 +68,8 @@ Route::delete('profile', [UserController::class, 'deleteProfile']); // Client/Pr
 Route::get('/usersByRole', [UserController::class, 'getUsersByRole']);
 Route::get('/count-professionnels', [UserController::class, 'countProfessionnels']);
 Route::get('/count-clients', [UserController::class, 'countClients']);
+  // Liste complète des utilisateurs (non paginée, admin uniquement)
+
 
 // Routes pour les demandes de service
 Route::middleware(['auth:api'])->group(function () {
